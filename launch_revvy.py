@@ -5,7 +5,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
-from _md5 import md5
+import hashlib
 
 from version import Version
 
@@ -17,7 +17,7 @@ def read_version(file):
 
 
 def file_hash(file):
-    hash_fn = md5()
+    hash_fn = hashlib.md5()
     with open(file, "rb") as f:
         hash_fn.update(f.read())
     return hash_fn.hexdigest()
