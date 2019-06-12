@@ -146,7 +146,7 @@ def main(directory):
                 # activate venv
                 'sh {}/install/venv/bin/activate'.format(newest[1]),
                 # start script
-                'python3 {}/revvy.py'.format(newest[1])
+                'python3 -u {}/revvy.py'.format(newest[1])
             ]
             try:
                 return_value = subprocess_cmd("\n".join(lines))
