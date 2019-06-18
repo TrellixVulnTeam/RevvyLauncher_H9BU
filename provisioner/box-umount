@@ -1,0 +1,16 @@
+cd `dirname $0`
+
+# Sometimes umount gives error due to dir being busy.
+# A better approach would be to check the return code of umount, and only wait then.
+# A quick and dirty solution is just sleeping.
+# Error message: umount: /home/vhermecz/rpi/RevvyRPi/provisioner/root: target is busy.
+sleep 3
+
+echo " un mounting boot "
+sudo umount ./boot
+rm -rf ./boot
+
+echo " un mounting root "
+sudo umount ./root
+rm -rf ./root
+

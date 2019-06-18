@@ -1,0 +1,23 @@
+cd `dirname $0`
+
+echo " box is shutting down "
+
+./ssh " sudo reboot "
+
+echo " waiting and then killing all qemu-system-arm because nuke the site from orbit is the only way to be sure "
+sleep 10
+killall qemu-system-arm
+
+
+#./box-mount
+
+#echo " restoring fstab and ld.so.preload for card"
+
+#sudo cp root/etc/fstab.card         root/etc/fstab
+#sudo cp root/etc/ld.so.preload.card root/etc/ld.so.preload
+
+
+#./box-umount
+
+
+
