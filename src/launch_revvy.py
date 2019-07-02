@@ -6,6 +6,7 @@ import subprocess
 import sys
 import tarfile
 import hashlib
+from json import JSONDecodeError
 
 from version import Version
 
@@ -82,22 +83,37 @@ def install_update_package(data_directory, install_directory):
         print('Removing stuck tmp dir: {}'.format(tmp_dir))
         shutil.rmtree(tmp_dir)  # probably failed update?
 
-    print('Extracting update package to: {}'.format(tmp_dir))
-    with tarfile.open(framework_update_file, "r:gz") as tar:
-        tar.extractall(path=tmp_dir)
+    # try to extract package
+    try:
+        print('Extracting update package to: {}'.format(tmp_dir))
+        with tarfile.open(framework_update_file, "r:gz") as tar:
+            tar.extractall(path=tmp_dir)
+    except (ValueError, tarfile.TarError):
+        print('Failed to extract package')
+        os.unlink(framework_update_file)
+        os.unlink(framework_update_meta_file)
+        return
 
-    # integrity check done by installed package, now only get the version
-    new_manifest_path = os.path.join(tmp_dir, 'manifest.json')
+    # try to read package version
+    try:
+        # integrity check done by installed package, now only get the version
+        new_manifest_path = os.path.join(tmp_dir, 'manifest.json')
 
-    print('Reading package version')
-    with open(new_manifest_path, 'r') as mf:
-        new_manifest = json.load(mf)
-        version_to_install = Version(new_manifest['version'])
+        print('Reading package version')
+        with open(new_manifest_path, 'r') as mf:
+            new_manifest = json.load(mf)
+            version_to_install = Version(new_manifest['version'])
 
-        target_dir = os.path.join(install_directory, dir_for_version(version_to_install))
-        if os.path.isdir(target_dir):
-            print('Update seems to already been installed, skipping')
-            version_to_install = None
+            target_dir = os.path.join(install_directory, dir_for_version(version_to_install))
+            if os.path.isdir(target_dir):
+                print('Update seems to already been installed, skipping')
+                version_to_install = None
+    except (IOError, JSONDecodeError):
+        print('Failed to read package version')
+        shutil.rmtree(tmp_dir)
+        os.unlink(framework_update_file)
+        os.unlink(framework_update_meta_file)
+        return
 
     if version_to_install:
         print('Installing version: {}'.format(version_to_install))
