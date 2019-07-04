@@ -51,15 +51,18 @@ def has_update_package(directory):
     if os.path.isfile(framework_update_file) and os.path.isfile(framework_update_meta_file):
         print("Found update file, validating...")
         update_file_valid = False
-        with open(framework_update_meta_file, 'r') as fup_mf:
-            metadata = json.load(fup_mf)
-            if metadata['length'] == os.stat(framework_update_file).st_size:
-                if file_hash(framework_update_file) == metadata['md5']:
-                    update_file_valid = True
+        try:
+            with open(framework_update_meta_file, 'r') as fup_mf:
+                metadata = json.load(fup_mf)
+                if metadata['length'] == os.stat(framework_update_file).st_size:
+                    if file_hash(framework_update_file) == metadata['md5']:
+                        update_file_valid = True
+                    else:
+                        print('Update file hash mismatch')
                 else:
-                    print('Update file hash mismatch')
-            else:
-                print('Update file length mismatch')
+                    print('Update file length mismatch')
+        except JSONDecodeError:
+            print("Update metadata corrupted, skipping update")
 
         if not update_file_valid:
             os.unlink(framework_update_file)
