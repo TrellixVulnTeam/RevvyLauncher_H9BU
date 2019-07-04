@@ -48,9 +48,10 @@ def has_update_package(directory):
     print("Looking for update files in {}".format(directory))
     framework_update_file = os.path.join(directory, '2.data')
     framework_update_meta_file = os.path.join(directory, '2.meta')
+    update_file_valid = False
+
     if os.path.isfile(framework_update_file) and os.path.isfile(framework_update_meta_file):
         print("Found update file, validating...")
-        update_file_valid = False
         try:
             with open(framework_update_meta_file, 'r') as fup_mf:
                 metadata = json.load(fup_mf)
@@ -68,9 +69,7 @@ def has_update_package(directory):
             os.unlink(framework_update_file)
             os.unlink(framework_update_meta_file)
 
-        return update_file_valid
-    else:
-        return False
+    return update_file_valid
 
 
 def dir_for_version(version):
