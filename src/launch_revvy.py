@@ -126,11 +126,14 @@ def install_update_package(data_directory, install_directory):
         print('Running setup')
         lines = [
             # setup virtual env
+            'echo "Setting up venv"',
             'python3 -m venv {}/install/venv'.format(target_dir),
             # activate venv
+            'echo "Activating venv"',
             'sh {}/install/venv/bin/activate'.format(target_dir),
             # install pip dependencies
-            'pip3 install -r {0}/requirements.txt --no-index --find-links file:///{0}/packages'.format(
+            'echo "Installing dependencies"',
+            'python3 -m pip install -r {0}/requirements.txt --no-index --find-links file:///{0}/packages'.format(
                 os.path.join(target_dir, 'install')),
             # create file that signals finished installation
             'touch {}/installed'.format(target_dir)
