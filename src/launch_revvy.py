@@ -198,16 +198,22 @@ def startup(directory):
     install_directory = os.path.join(directory, "installed")
     data_directory = os.path.join(directory, 'data', 'ble')
 
-    cleanup_invalid_installations(install_directory)
-    if has_update_package(data_directory):
-        install_update_package(data_directory, install_directory)
+    stop = False
+    while not stop:
+        cleanup_invalid_installations(install_directory)
+        if has_update_package(data_directory):
+            install_update_package(data_directory, install_directory)
 
-    path = select_newest_package(install_directory, skipped_versions)
-    if path:
-        return_value = start_framework(path)
-        if return_value == 2:
-            # if script dies with integrity error, restart process and skip framework
-            skipped_versions.append(path)
+        path = select_newest_package(install_directory, skipped_versions)
+        if path:
+            return_value = start_framework(path)
+            if return_value == 0:
+                stop = True
+            elif return_value == 2:
+                # if script dies with integrity error, restart process and skip framework
+                skipped_versions.append(path)
+        else:
+            stop = True
 
 
 def main(directory):
