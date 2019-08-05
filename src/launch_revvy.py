@@ -38,11 +38,14 @@ def subprocess_cmd(command):
 
 
 def cleanup_invalid_installations(directory):
+    print("Cleaning up invalid installations")
     for fw_dir in os.listdir(directory):
+        print("Checking {}".format(fw_dir))
+        fw_dir = os.path.join(directory, fw_dir)
         if os.path.isdir(fw_dir):
-            fw_dir = os.path.join(directory, fw_dir)
             manifest_file = os.path.join(fw_dir, 'installed')
             if not os.path.isfile(manifest_file):
+                print('Removing {}'.format(fw_dir))
                 shutil.rmtree(fw_dir)
 
 
