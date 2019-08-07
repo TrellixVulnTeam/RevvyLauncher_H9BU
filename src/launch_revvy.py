@@ -13,12 +13,39 @@ from version import Version
 
 
 def read_version(file):
+    """Reads version from json formatted manifest file.
+
+    Args:
+        file: Path to a json formatted manifest file.
+
+    Returns:
+        A Version object containing the version json field of the provided
+        file.
+
+    Raises:
+        IOError: An error occured during opening/reading the file.
+        ValueError: JSON format of the file is bogus.
+
+    TODO(vhermecz): Should return None on error probably.
+    """
     with open(file, 'r') as mf:
         manifest = json.load(mf)
     return Version(manifest['version'])
 
 
 def file_hash(file):
+    """Calculates the md5 hash for the file provided.
+
+    Args:
+        file: Path to the file.
+
+    Returns:
+        The md5 hash string of the file.
+        E.g.: 'd41d8cd98f00b204e9800998ecf8427e'
+
+    Raises:
+        IOError: An error occured during opening/reading the file.
+    """
     hash_fn = hashlib.md5()
     with open(file, "rb") as f:
         hash_fn.update(f.read())
@@ -26,6 +53,14 @@ def file_hash(file):
 
 
 def subprocess_cmd(command):
+    """Executes shell commands
+
+    Args:
+        command: Newline separated commands to be executed in the shell
+
+    Returns:
+        Return code of execution
+    """
     try:
         process = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True, universal_newlines=True)
         for line in iter(process.stdout.readline, b''):
@@ -38,6 +73,15 @@ def subprocess_cmd(command):
 
 
 def cleanup_invalid_installations(directory):
+    """Removes incomplete versions of fw installations.
+
+    The presence of the 'installed' file prooves that the installation
+    completed successfully. For any fw directory without this sentinel,
+    we remove the directory.
+
+    Args:
+        directory: Base directory, containing installations.
+    """
     print("Cleaning up invalid installations")
     for fw_dir in os.listdir(directory):
         print("Checking {}".format(fw_dir))
@@ -50,6 +94,17 @@ def cleanup_invalid_installations(directory):
 
 
 def has_update_package(directory):
+    """Checks if a valid fw update package is available.
+
+    The '2.meta' json file contains length and md5 information about the update
+    package named '2.data'. The code checks if these values are matching.
+
+    Args:
+        directory: (String) Directory path containing update package.
+
+    Returns:
+        True if update package is present and valid.
+    """
     print("Looking for update files in {}".format(directory))
     framework_update_file = os.path.join(directory, '2.data')
     framework_update_meta_file = os.path.join(directory, '2.meta')
@@ -78,10 +133,31 @@ def has_update_package(directory):
 
 
 def dir_for_version(version):
+    """Generates directory name for a framework version.
+
+    Args:
+        version: A Version object.
+
+    Returns:
+        Directory name as a string.
+    """
     return 'revvy-{}'.format(version)
 
 
 def install_update_package(data_directory, install_directory):
+    """Install update package.
+
+    Extracts, validates and installs the update package. If any step of this
+    process fails tries to clean up, and remove the corrupt update package.
+    Installation creates a virtualenv, installs required packages via pip from
+    a local repository, and places the 'installed' placeholder into the
+    directory, as the final step, to proove that installation finished
+    successfully.
+
+    Args:
+        data_directory: Directory path containing the fw update.
+        install_directory: Directory path with the fw installations.
+    """
     framework_update_file = os.path.join(data_directory, '2.data')
     framework_update_meta_file = os.path.join(data_directory, '2.meta')
     tmp_dir = os.path.join(install_directory, 'tmp')
@@ -108,6 +184,7 @@ def install_update_package(data_directory, install_directory):
 
         print('Reading package version')
         with open(new_manifest_path, 'r') as mf:
+            # TODO(vhermecz): Use read_version
             new_manifest = json.load(mf)
             version_to_install = Version(new_manifest['version'])
 
@@ -156,6 +233,19 @@ def install_update_package(data_directory, install_directory):
 
 
 def select_newest_package(directory, skipped_versions):
+    """Finds latest, non blacklisted framework version.
+
+    Checks all subdirectories in directory, reads the version information from
+    the manifest.json files.
+
+    Args:
+        directory: Base directory of installed frameworks.
+        skipped_versions: List of path names of framework versions to be
+            skipped.
+
+    Returns:
+        String path for the newest version.
+    """
     newest = Version("0.0")
     newest_path = None
 
@@ -175,6 +265,17 @@ def select_newest_package(directory, skipped_versions):
 
 
 def start_framework(path):
+    """Runs revvy framework in its virtualenv.
+
+    Args:
+        path: (String) Path to directory containing the revvy code.
+
+    Returns:
+        Integer error code.
+        See revvy.py's RevvyStatusCode for actual codes.
+        0 - OK
+        other - ERROR, INTEGRITY_ERROR, UPDATE_REQUEST, etc...
+    """
     script_lives = True
     return_value = 0
     while script_lives:
@@ -201,6 +302,24 @@ def start_framework(path):
 
 
 def startup(directory):
+    """Runs revvy from directory.
+
+    Handles the command line arguments of the script.
+    Currently the only one is --install-only, which terminates execution after
+    install.
+
+    Steps:
+    - Cleanup failed installations
+    - Search for fw update and install it
+    - Execute latest version
+    - If execution terminates normally, finish
+    - If execution terminates with integriry_error, exclude version and retry
+    - Otherwise restart the same version
+
+    Args:
+        directory: Base directory containing installed version of the revvy
+            framework.
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('--install-only', help='Install updates but do not start framework', action='store_true')
 
