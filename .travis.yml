@@ -1,0 +1,19 @@
+sudo: false
+dist: xenial
+language: python
+python:
+  - "3.5"
+  - "3.6"
+  - "3.7"
+  # PyPy versions
+  - "pypy3.5"
+# command to install dependencies
+install:
+  - pip install pycodestyle==2.5.0
+
+# command to run tests
+script:
+  - python -m tools.precommit_pep8 --check-all
+
+notifications:
+  slack: revolution-robotics:sXlaetqFuXuT3Vr4atwogEdK
