@@ -179,58 +179,50 @@ def install_update_package(data_directory, install_directory):
         return
 
     # try to read package version
-    try:
-        # integrity check done by installed package, now only get the version
-        new_manifest_path = os.path.join(tmp_dir, 'manifest.json')
+    # integrity check done by installed package, now only get the version
+    version_to_install = read_version(os.path.join(tmp_dir, 'manifest.json'))
 
-        print('Reading package version')
-        with open(new_manifest_path, 'r') as mf:
-            # TODO(vhermecz): Use read_version
-            new_manifest = json.load(mf)
-            version_to_install = Version(new_manifest['version'])
-
-            target_dir = os.path.join(install_directory, dir_for_version(version_to_install))
-            if os.path.isdir(target_dir):
-                print('Update seems to already been installed, skipping')
-                version_to_install = None
-    except (IOError, JSONDecodeError):
+    print('Reading package version')
+    if version_to_install is None:
         print('Failed to read package version')
         shutil.rmtree(tmp_dir)
         os.unlink(framework_update_file)
         os.unlink(framework_update_meta_file)
         return
 
-    if version_to_install:
-        print('Installing version: {}'.format(version_to_install))
-
-        print('Renaming {} to {}'.format(tmp_dir, target_dir))
-        shutil.move(tmp_dir, target_dir)
-
-        print('Running setup')
-        lines = [
-            # setup virtual env
-            'echo "Setting up venv"',
-            'python3 -m venv {}/install/venv'.format(target_dir),
-            # activate venv
-            'echo "Activating venv"',
-            'sh {}/install/venv/bin/activate'.format(target_dir),
-            # install pip dependencies
-            'echo "Installing dependencies"',
-            'python3 -m pip install -r {0}/requirements.txt --no-index --find-links file:///{0}/packages'.format(
-                os.path.join(target_dir, 'install')),
-            # create file that signals finished installation
-            'touch {}/installed'.format(target_dir)
-        ]
-        subprocess_cmd("\n".join(lines))
-
-        print('Removing update package')
-        os.unlink(framework_update_file)
-        os.unlink(framework_update_meta_file)
-    else:
+    target_dir = os.path.join(install_directory, dir_for_version(version_to_install))
+    if os.path.isdir(target_dir):
+        print('Update seems to already been installed, skipping')
         # we don't want to install this package, remove sources
         shutil.rmtree(tmp_dir)
         os.unlink(framework_update_file)
         os.unlink(framework_update_meta_file)
+        return
+
+    print('Installing version: {}'.format(version_to_install))
+    print('Renaming {} to {}'.format(tmp_dir, target_dir))
+    shutil.move(tmp_dir, target_dir)
+
+    print('Running setup')
+    lines = [
+        # setup virtual env
+        'echo "Setting up venv"',
+        'python3 -m venv {}/install/venv'.format(target_dir),
+        # activate venv
+        'echo "Activating venv"',
+        'sh {}/install/venv/bin/activate'.format(target_dir),
+        # install pip dependencies
+        'echo "Installing dependencies"',
+        'python3 -m pip install -r {0}/requirements.txt --no-index --find-links file:///{0}/packages'.format(
+            os.path.join(target_dir, 'install')),
+        # create file that signals finished installation
+        'touch {}/installed'.format(target_dir)
+    ]
+    subprocess_cmd("\n".join(lines))
+
+    print('Removing update package')
+    os.unlink(framework_update_file)
+    os.unlink(framework_update_meta_file)
 
 
 def select_newest_package(directory, skipped_versions):
