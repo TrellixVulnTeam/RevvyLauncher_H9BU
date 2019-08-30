@@ -337,11 +337,11 @@ def startup(directory):
             subprocess_cmd("gpio -g mode 22 in")
 
             # read AMP_EN to detect if Revvy is ON
-            amp_en = subprocess_cmd("gpio read 3")
-            while amp_en == 0:
+            amp_en = subprocess.check_output(["gpio", "read", "3"])
+            while amp_en != b'1\n':
                 print("Device is off... waiting")
                 time.sleep(1)
-                amp_en = subprocess_cmd("gpio read 3")
+                amp_en = subprocess.check_output(["gpio", "read", "3"])
 
             else:
                 print("Device is on, start framework")
