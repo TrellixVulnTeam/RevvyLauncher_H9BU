@@ -19,8 +19,8 @@ def read_version(file):
         file: Path to a json formatted manifest file.
 
     Returns:
-        A Version object containing the version json field of the provided
-        file.
+        A Version object containing the version json field of the provided file
+        or None on error.
     """
     try:
         with open(file, 'r') as mf:
@@ -37,16 +37,19 @@ def file_hash(file):
         file: Path to the file.
 
     Returns:
-        The md5 hash string of the file.
+        The md5 hash string of the file or None on error.
         E.g.: 'd41d8cd98f00b204e9800998ecf8427e'
 
     Raises:
         IOError: An error occurred during opening/reading the file.
     """
-    hash_fn = hashlib.md5()
-    with open(file, "rb") as f:
-        hash_fn.update(f.read())
-    return hash_fn.hexdigest()
+    try:
+        hash_fn = hashlib.md5()
+        with open(file, "rb") as f:
+            hash_fn.update(f.read())
+        return hash_fn.hexdigest()
+    except IOError:
+        return None
 
 
 def subprocess_cmd(command):
@@ -113,13 +116,15 @@ def has_update_package(directory):
             with open(framework_update_meta_file, 'r') as fup_mf:
                 metadata = json.load(fup_mf)
                 if metadata['length'] == os.stat(framework_update_file).st_size:
-                    if file_hash(framework_update_file) == metadata['md5']:
+                    if metadata['md5'] is not None and file_hash(framework_update_file) == metadata['md5']:
                         update_file_valid = True
                     else:
                         print('Update file hash mismatch')
                 else:
                     print('Update file length mismatch')
-        except JSONDecodeError:
+        except IOError:
+            print("Failed to read metadata")
+        except (JSONDecodeError, KeyError):
             print("Update metadata corrupted, skipping update")
 
         if not update_file_valid:
