@@ -23,7 +23,7 @@ def read_version(file):
         file.
 
     Raises:
-        IOError: An error occured during opening/reading the file.
+        IOError: An error occurred during opening/reading the file.
         ValueError: JSON format of the file is bogus.
     """
     try:
@@ -45,7 +45,7 @@ def file_hash(file):
         E.g.: 'd41d8cd98f00b204e9800998ecf8427e'
 
     Raises:
-        IOError: An error occured during opening/reading the file.
+        IOError: An error occurred during opening/reading the file.
     """
     hash_fn = hashlib.md5()
     with open(file, "rb") as f:
@@ -76,7 +76,7 @@ def subprocess_cmd(command):
 def cleanup_invalid_installations(directory):
     """Removes incomplete versions of fw installations.
 
-    The presence of the 'installed' file prooves that the installation
+    The presence of the 'installed' file proves that the installation
     completed successfully. For any fw directory without this sentinel,
     we remove the directory.
 
@@ -152,7 +152,7 @@ def install_update_package(data_directory, install_directory):
     process fails tries to clean up, and remove the corrupt update package.
     Installation creates a virtualenv, installs required packages via pip from
     a local repository, and places the 'installed' placeholder into the
-    directory, as the final step, to proove that installation finished
+    directory, as the final step, to prove that installation finished
     successfully.
 
     Args:
@@ -265,7 +265,7 @@ def start_framework(path):
 
     Returns:
         Integer error code.
-        See revvy.py's RevvyStatusCode for actual codes.
+        See revvy/utils.py's RevvyStatusCode for actual codes.
         0 - OK
         other - ERROR, INTEGRITY_ERROR, UPDATE_REQUEST, etc...
     """
@@ -306,7 +306,7 @@ def startup(directory):
     - Search for fw update and install it
     - Execute latest version
     - If execution terminates normally, finish
-    - If execution terminates with integriry_error, exclude version and retry
+    - If execution terminates with integrity_error, exclude version and retry
     - Otherwise restart the same version
 
     Args:
