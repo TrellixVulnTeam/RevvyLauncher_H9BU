@@ -340,16 +340,28 @@ def startup(directory):
         if args.install_only:
             return
         else:
-            path = select_newest_package(install_directory, skipped_versions)
-            if path:
-                return_value = start_framework(path)
-                if return_value == 0:
-                    stop = True
-                elif return_value == 2:
-                    # if script dies with integrity error, restart process and skip framework
-                    skipped_versions.append(path)
+            # configure AMP_EN to input
+            subprocess_cmd("gpio -g mode 22 in")
+
+            # read AMP_EN to detect if Revvy is ON
+            amp_en = subprocess_cmd("gpio read 3")
+            while amp_en == 0:
+                print("Device is off... waiting")
+                time.sleep(1)
+                amp_en = subprocess_cmd("gpio read 3")
+
             else:
-                stop = True
+                print("Device is on, start framework")
+                path = select_newest_package(install_directory, skipped_versions)
+                if path:
+                    return_value = start_framework(path)
+                    if return_value == 0:
+                        stop = True
+                    elif return_value == 2:
+                        # if script dies with integrity error, restart process and skip framework
+                        skipped_versions.append(path)
+                else:
+                    stop = True
 
 
 def main(directory):
