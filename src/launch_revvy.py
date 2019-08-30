@@ -370,7 +370,7 @@ def main(directory):
 
 
 if __name__ == "__main__":
-    directory = os.path.dirname(__file__)
-    directory = os.path.abspath(directory)
-    os.chdir(directory)
-    main(directory)
+    current_directory = os.path.dirname(__file__)
+    current_directory = os.path.abspath(current_directory)
+    os.chdir(current_directory)
+    main(current_directory)
