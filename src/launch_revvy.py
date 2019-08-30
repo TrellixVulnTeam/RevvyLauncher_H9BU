@@ -7,8 +7,8 @@ import subprocess
 import sys
 import tarfile
 import hashlib
+import time
 from json import JSONDecodeError
-
 from version import Version
 
 
@@ -25,12 +25,13 @@ def read_version(file):
     Raises:
         IOError: An error occured during opening/reading the file.
         ValueError: JSON format of the file is bogus.
-
-    TODO(vhermecz): Should return None on error probably.
     """
-    with open(file, 'r') as mf:
-        manifest = json.load(mf)
-    return Version(manifest['version'])
+    try:
+        with open(file, 'r') as mf:
+            manifest = json.load(mf)
+        return Version(manifest['version'])
+    except (FileNotFoundError, JSONDecodeError):
+        return None
 
 
 def file_hash(file):
@@ -256,7 +257,7 @@ def select_newest_package(directory, skipped_versions):
             manifest_file = os.path.join(fw_dir, 'manifest.json')
             if os.path.isfile(manifest_file):
                 version = read_version(manifest_file)
-                if newest is None or newest < version:
+                if version is not None and (newest is None or newest < version):
                     newest = version
                     print('Found version {}'.format(version))
                     newest_path = os.path.join(directory, dir_for_version(version))
