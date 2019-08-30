@@ -21,16 +21,12 @@ def read_version(file):
     Returns:
         A Version object containing the version json field of the provided
         file.
-
-    Raises:
-        IOError: An error occurred during opening/reading the file.
-        ValueError: JSON format of the file is bogus.
     """
     try:
         with open(file, 'r') as mf:
             manifest = json.load(mf)
         return Version(manifest['version'])
-    except (FileNotFoundError, JSONDecodeError):
+    except (FileNotFoundError, JSONDecodeError, KeyError):
         return None
 
 
