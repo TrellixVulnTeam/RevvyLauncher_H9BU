@@ -363,6 +363,7 @@ def main(directory):
 
 
 if __name__ == "__main__":
+    subprocess_cmd('/home/pi/serial.sh')
     current_directory = os.path.dirname(__file__)
     current_directory = os.path.abspath(current_directory)
     os.chdir(current_directory)
