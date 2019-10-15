@@ -12,7 +12,7 @@ from json import JSONDecodeError
 from version import Version
 
 
-default_package_dir = 'default_packages'
+default_package_dir = 'default/packages'
 installed_packages_dir = 'user/packages'
 start_directories = [installed_packages_dir, default_package_dir]
 
@@ -88,14 +88,17 @@ def cleanup_invalid_installations(directory):
         directory: Base directory, containing installations.
     """
     print("Cleaning up invalid installations")
-    for fw_dir in os.listdir(directory):
-        print("Checking {}".format(fw_dir))
-        fw_dir = os.path.join(directory, fw_dir)
-        if os.path.isdir(fw_dir):
-            manifest_file = os.path.join(fw_dir, 'installed')
-            if not os.path.isfile(manifest_file):
-                print('Removing {}'.format(fw_dir))
-                shutil.rmtree(fw_dir)
+    try:
+        for fw_dir in os.listdir(directory):
+            print("Checking {}".format(fw_dir))
+            fw_dir = os.path.join(directory, fw_dir)
+            if os.path.isdir(fw_dir):
+                manifest_file = os.path.join(fw_dir, 'installed')
+                if not os.path.isfile(manifest_file):
+                    print('Removing {}'.format(fw_dir))
+                    shutil.rmtree(fw_dir)
+    except FileNotFoundError:
+        print('No user packages exist')
 
 
 def has_update_package(directory):
@@ -249,16 +252,19 @@ def select_newest_package(directory, skipped_versions):
     newest_path = None
 
     # find newest framework
-    for fw_dir in os.listdir(directory):
-        fw_dir = os.path.join(directory, fw_dir)
-        if fw_dir not in skipped_versions:
-            manifest_file = os.path.join(fw_dir, 'manifest.json')
-            if os.path.isfile(manifest_file):
-                version = read_version(manifest_file)
-                if version is not None and (newest is None or newest < version):
-                    newest = version
-                    print('Found version {}'.format(version))
-                    newest_path = os.path.join(directory, dir_for_version(version))
+    try:
+        for fw_dir in os.listdir(directory):
+            fw_dir = os.path.join(directory, fw_dir)
+            if fw_dir not in skipped_versions:
+                manifest_file = os.path.join(fw_dir, 'manifest.json')
+                if os.path.isfile(manifest_file):
+                    version = read_version(manifest_file)
+                    if version is not None and (newest is None or newest < version):
+                        newest = version
+                        print('Found version {}'.format(version))
+                        newest_path = os.path.join(directory, dir_for_version(version))
+    except FileNotFoundError:
+        pass
 
     return newest_path
 
