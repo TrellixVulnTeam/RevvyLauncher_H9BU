@@ -12,6 +12,11 @@ from json import JSONDecodeError
 from version import Version
 
 
+default_package_dir = 'default_packages'
+installed_packages_dir = 'user/packages'
+start_directories = [installed_packages_dir, default_package_dir]
+
+
 def read_version(file):
     """Reads version from json formatted manifest file.
 
@@ -316,13 +321,19 @@ def startup(directory):
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('--install-only', help='Install updates but do not start framework', action='store_true')
+    parser.add_argument('--install-default', help='Install the default package. Requires --install-only'
+                                                  ' and the filesystem must be writeable.', action='store_true')
 
     args = parser.parse_args()
 
     skipped_versions = []
 
-    install_directory = os.path.join(directory, "installed")
-    data_directory = os.path.join(directory, 'data', 'ble')
+    if args.install_only and args.install_default:
+        install_directory = os.path.join(directory, default_package_dir)
+    else:
+        install_directory = os.path.join(directory, installed_packages_dir)
+
+    data_directory = os.path.join(directory, 'user', 'ble')
 
     stop = False
     while not stop:
@@ -345,7 +356,12 @@ def startup(directory):
 
             else:
                 print("Device is on, start framework")
+                # try to look for a working update package
                 path = select_newest_package(install_directory, skipped_versions)
+                if not path:
+                    # if there is no such package, start the built in one
+                    path = select_newest_package(default_package_dir, [])
+
                 if path:
                     return_value = start_framework(path)
                     if return_value == 0:
@@ -354,6 +370,7 @@ def startup(directory):
                         # if script dies with integrity error, restart process and skip framework
                         skipped_versions.append(path)
                 else:
+                    # if, for some reason there is no built-in package, stop
                     stop = True
 
 
@@ -363,7 +380,6 @@ def main(directory):
 
 
 if __name__ == "__main__":
-    subprocess_cmd('/home/pi/serial.sh')
     current_directory = os.path.dirname(__file__)
     current_directory = os.path.abspath(current_directory)
     os.chdir(current_directory)
