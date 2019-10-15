@@ -1,7 +1,7 @@
 import re
 
 
-version_re = re.compile('(?P<major>\\d+?).(?P<minor>\\d+?)(\\.(?P<rev>\\d+))?(-.*?)?$')
+version_re = re.compile('(?P<major>\\d+?)\\.(?P<minor>\\d+?)(\\.(?P<rev>\\d+))?(-.*?)?$')
 
 
 class FormatError(Exception):
@@ -15,6 +15,10 @@ class Version:
         Version(1.0.123)
         >>> Version('1.0-foobar') # optional tag is ignored
         Version(1.0.0)
+        >>> Version('729')
+        Traceback (most recent call last):
+        ...
+        version.FormatError
         """
         match = version_re.match(ver_str)
         if not match:
