@@ -8,6 +8,7 @@ import sys
 import tarfile
 import hashlib
 import time
+import traceback
 from json import JSONDecodeError
 from version import Version
 
@@ -31,8 +32,14 @@ def read_version(file):
         with open(file, 'r') as mf:
             manifest = json.load(mf)
         return Version(manifest['version'])
-    except (FileNotFoundError, JSONDecodeError, KeyError):
-        return None
+    except FileNotFoundError:
+        print('File not found: {}'.format(file))
+    except JSONDecodeError:
+        print('Invalid json file: {}'.format(file))
+    except KeyError:
+        print('Json file is valid but there is no version in it: {}'.format(file))
+
+    return None
 
 
 def file_hash(file):
@@ -54,6 +61,8 @@ def file_hash(file):
             hash_fn.update(f.read())
         return hash_fn.hexdigest()
     except IOError:
+        print('Could not calculate hash for {}'.format(file))
+        print(traceback.format_exc())
         return None
 
 
@@ -264,7 +273,8 @@ def select_newest_package(directory, skipped_versions):
                         print('Found version {}'.format(version))
                         newest_path = os.path.join(directory, dir_for_version(version))
     except FileNotFoundError:
-        pass
+        print('Failed to select newest package')
+        print(traceback.format_exc())
 
     return newest_path
 
@@ -341,6 +351,9 @@ def startup(directory):
 
     data_directory = os.path.join(directory, 'user', 'ble')
 
+    print('Install directory: {}'.format(install_directory))
+    print('Data directory: {}'.format(data_directory))
+
     stop = False
     while not stop:
         cleanup_invalid_installations(install_directory)
@@ -348,7 +361,8 @@ def startup(directory):
             install_update_package(data_directory, install_directory)
 
         if args.install_only:
-            return
+            print('--install-only flag is set, exiting')
+            stop = True
         else:
             # configure AMP_EN to input
             subprocess_cmd("gpio -g mode 22 in")
@@ -360,24 +374,26 @@ def startup(directory):
                 time.sleep(1)
                 amp_en = subprocess.check_output(["gpio", "read", "3"])
 
-            else:
-                print("Device is on, start framework")
-                # try to look for a working update package
-                path = select_newest_package(install_directory, skipped_versions)
-                if not path:
-                    # if there is no such package, start the built in one
-                    path = select_newest_package(default_package_dir, [])
+            print("Device is on, start framework")
+            # try to look for a working update package
+            path = select_newest_package(install_directory, skipped_versions)
+            if not path:
+                # if there is no such package, start the built in one
+                path = select_newest_package(default_package_dir, [])
 
-                if path:
-                    return_value = start_framework(path)
-                    if return_value == 0:
-                        stop = True
-                    elif return_value == 2:
-                        # if script dies with integrity error, restart process and skip framework
-                        skipped_versions.append(path)
-                else:
-                    # if, for some reason there is no built-in package, stop
+            if path:
+                return_value = start_framework(path)
+                if return_value == 0:
+                    print('Manual exit')
                     stop = True
+                elif return_value == 2:
+                    # if script dies with integrity error, restart process and skip framework
+                    print('Integrity error - add {} to skipped list'.format(path))
+                    skipped_versions.append(path)
+            else:
+                # if, for some reason there is no built-in package, stop
+                print('There are no more packages to try - exit')
+                stop = True
 
 
 def main(directory):
