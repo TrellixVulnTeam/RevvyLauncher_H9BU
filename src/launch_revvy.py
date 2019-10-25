@@ -231,7 +231,7 @@ def install_update_package(data_directory, install_directory):
         'sh {}/install/venv/bin/activate'.format(target_dir),
         # install pip dependencies
         'echo "Installing dependencies"',
-        'python3 -m pip install -r {0}/requirements.txt --no-index --find-links file:///{0}/packages'.format(
+        'python3 -m pip install --no-cache-dir -r {0}/requirements.txt --no-index --find-links file:///{0}/packages'.format(
             os.path.join(target_dir, 'install')),
         # create file that signals finished installation
         'touch {}/installed'.format(target_dir)
