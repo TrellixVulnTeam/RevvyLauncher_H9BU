@@ -375,6 +375,8 @@ def startup(directory):
                 amp_en = subprocess.check_output(["gpio", "read", "3"])
 
             print("Device is on, start framework")
+            # delay to wait hciuart device
+            time.sleep(1)
             # try to look for a working update package
             path = select_newest_package(install_directory, skipped_versions)
             if not path:
